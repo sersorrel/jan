@@ -1,0 +1,31 @@
+.TH JAN 8 "6 June 2020"
+.SH NAME
+jan \- capture filesystem changes using overlayfs
+.SH SYNOPSIS
+.B jan
+.I path
+.IR command ...
+.SH DESCRIPTION
+\fBjan\fR runs \fIcommand\fR in a chroot, capturing all filesystem changes it makes using overlayfs, and saves the resulting directory tree to \fIpath\fR.
+.PP
+Note that it must be possible for \fBjan\fR to create a temporary directory next to \fIpath\fR (not beneath), and that temporary directory must be on the same filesystem as \fIpath\fR, which in practice means that \fBjan\fR cannot operate if a filesystem is mounted at \fIpath\fR. \fBjan\fR will attempt to tell you if this is the case.
+In addition, \fBjan\fR expects \fIpath\fR to exist, and will not create it if it does not, to avoid inadvertently leaving you with a directory owned by root.
+.PP
+Refer to the overlayfs documentation (Documentation/filesystems/overlayfs.txt in the Linux source tree) for detailed information on how \fBjan\fR deals with e.g. file deletions.
+.SH OPTIONS
+There are no options.
+.SH EXAMPLES
+.TP
+.nf
+sudo jan pkg-data make install
+.fi
+Note that this use-case may be better served by carefully(8).
+.SH BUGS
+\fBjan\fR is subject to the limitations of overlayfs, which currently has issues with certain filesystems (e.g. sysfs), and additionally does not support modifications to the underlying filesystems while the overlay is mounted.
+As a result, it's typical for files that are created while \fIcommand\fR is running not to be visible to \fIcommand\fR, and for other strange things to happen if existing files are modified or deleted by something other than \fIcommand\fR.
+.SH AUTHOR
+Written by Ash Holland <ash@sorrel.sh>.
+.SH COPYRIGHT
+Copyright \(co 2020 Ash Holland. Licensed under the EUPL (1.2 or later).
+.SH SEE ALSO
+carefully(8)

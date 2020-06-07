@@ -1,0 +1,39 @@
+#!/bin/sh
+
+set -eu
+
+if [ "$(id -u)" -ne 0 ]; then
+	printf 'root is required\n' >&2
+	exit 1
+fi
+
+if [ $# -lt 2 ]; then
+	printf 'Usage: %s PATH COMMAND...\n' "$0" >&2
+	exit 1
+fi
+
+upper=$1
+shift
+
+if ! [ -e "$upper" ]; then
+	printf '%s: no such directory\n' "$upper" >&2
+	exit 1
+fi
+
+if mountpoint -q "$upper"; then
+	printf '%s: cannot store data in the root of a mount\n' "$upper" >&2
+	exit 1
+fi
+
+mountpoint=$(mktemp -d jan-mount-XXXXXX)
+parent=$(dirname "$upper")
+workdir=$(mktemp -d -p "$parent" jan-tmp-XXXXXX)
+
+mount -t overlay overlay -o lowerdir=/,upperdir="$upper",workdir="$workdir" "$mountpoint"
+
+chroot "$mountpoint" /bin/sh -c 'cd "$1" && shift && "$@"' sh "$PWD" "$@" || true
+
+umount "$mountpoint"
+
+rm -r "$workdir"
+rmdir "$mountpoint"
